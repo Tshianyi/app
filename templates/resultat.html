@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AUTHENTIC.AI</title>
+  <style>
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+    body {
+      display: flex;
+      min-height: 100vh;
+      background: #f4f6fa;
+    }
+    .sidebar {
+      background-color: #fff;
+      width: 250px;
+      padding: 20px;
+      border-right: 1px solid #ddd;
+      display: flex;
+      flex-direction: column;
+      position: relative; /* modif pour responsive */
+      transition: left 0.3s ease;
+      z-index: 1000;
+    }
+    .sidebar h2 {
+      color: #0077ff;
+      margin-bottom: 20px;
+    }
+    .sidebar ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      cursor: pointer;
+    }
+    .sidebar ul li {
+      padding: 10px;
+      border-radius: 5px;
+      user-select: none;
+    }
+    .sidebar ul li.active,
+    .sidebar ul li:hover {
+      background-color: #0077ff;
+      color: #fff;
+    }
+    #sidebar-history {
+      margin-top: 20px;
+      max-height: 60vh;
+      overflow-y: auto;
+      border-top: 1px solid #ddd;
+      padding-top: 10px;
+      display: none;
+    }
+    .history-entry {
+      display: flex;
+      gap: 10px;
+      background: #e8f0fe;
+      padding: 10px 15px;
+      border-radius: 10px;
+      align-items: center;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      color: #333;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .history-entry img {
+      width: 80px;
+      height: 50px;
+      object-fit: cover;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    }
+    .history-entry div {
+      line-height: 1.3;
+    }
+    .history-entry .result {
+      color: #007a00;
+    }
+    .main {
+      flex: 1;
+      background: #f4f6fa;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+    }
+    .topbar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      padding: 15px;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+      margin-bottom: 20px;
+    }
+    .dashboard {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .upload-form {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      display: block;
+    }
+    .upload-form h3 {
+      margin-bottom: 15px;
+      color: #0077ff;
+    }
+    .upload-form label {
+      display: block;
+      margin: 10px 0 5px;
+      font-weight: 600;
+    }
+    .upload-form select,
+    .upload-form input[type="file"] {
+      width: 100%;
+      padding: 8px 10px;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      cursor: pointer;
+      transition: border-color 0.3s ease;
+    }
+    .upload-form select:hover,
+    .upload-form input[type="file"]:hover {
+      border-color: #0077ff;
+    }
+    .upload-form select:focus,
+    .upload-form input[type="file"]:focus {
+      outline: none;
+      border-color: #0056b3;
+    }
+    .card-mobile {
+      background: #fff;
+      padding: 20px;
+      border-radius: 15px;
+      text-align: center;
+      position: relative;
+    }
+    .card-mobile h4 {
+      margin-bottom: 15px;
+      color: #0077ff;
+    }
+    #billetRecto {
+      max-width: 100%;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      display: none;
+      position: relative;
+    }
+    /* Barre de scannage */
+    #scanner-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 12px;
+      height: 100%;
+      background: rgba(0, 200, 255, 0.7);
+      box-shadow: 0 0 15px rgba(0, 200, 255, 0.9);
+      border-radius: 6px;
+      display: none;
+      z-index: 20;
+      animation-timing-function: ease-in-out;
+    }
+    @keyframes scan-move {
+      0% { left: 0; }
+      50% { left: calc(100% - 12px); }
+      100% { left: 0; }
+    }
+    .analyze-btn {
+      background: #5a4fcf;
+      color: #fff;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 10px;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: background-color 0.3s ease;
+      position: relative;
+    }
+    .analyze-btn:hover:not(.loading) {
+      background: #463db3;
+    }
+    .analyze-btn.loading {
+      color: transparent;
+      pointer-events: none;
+    }
+    .analyze-btn.loading::after {
+      content: "Analyse en cours...";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-weight: bold;
+      font-size: 1rem;
+      animation: blinkText 1s infinite;
+    }
+    @keyframes blinkText {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .analyze-result {
+      margin-top: 20px;
+      font-size: 1rem;
+      color: green;
+      display: none;
+      font-weight: 600;
+    }
+    /* Style section analyse */
+    #analyse-section h3 {
+      font-weight: bold;
+      font-size: 1.4rem;
+    }
+
+    /* Hamburger menu visible uniquement sur petits écrans */
+    #menu-toggle {
+      background:none;
+      border:none;
+      font-size:1.8rem;
+      cursor:pointer;
+      color:#0077ff;
+      margin-right:auto;
+      display:none;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: -270px; /* caché à gauche */
+        width: 250px;
+        height: 100%;
+        background-color: #fff;
+        padding: 20px;
+        border-right: 1px solid #ddd;
+        box-shadow: 2px 0 8px rgba(0,0,0,0.15);
+        transition: left 0.3s ease;
+        z-index: 1000;
+      }
+      .sidebar.active {
+        left: 0;
+      }
+      #menu-toggle {
+        display: block;
+      }
+      .main {
+        padding: 20px 10px;
+      }
+    }
+
+    /* === Notification en haut à droite === */
+    #notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: #0077ff;
+      color: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      display: none;
+      z-index: 1100;
+      min-width: 280px;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      font-size: 1rem;
+    }
+
+    #notification.non-authentique {
+      background-color: #c0392b; /* rouge */
+    }
+
+    #notification button {
+      background: white;
+      color: #0077ff;
+      border: none;
+      border-radius: 5px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: background-color 0.3s ease;
+    }
+
+    #notification button:hover {
+      background-color: #e0e0e0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar">
+    <h2>AUTHENTIC.AI</h2>
+    <ul>
+      <li class="active" data-tab="scanner">Scanner</li>
+      <li data-tab="historique">Historique</li>
+      <li data-tab="parametres">Paramètres</li>
+    </ul>
+
+    <div id="sidebar-history"></div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <button id="menu-toggle" aria-label="Toggle menu">&#9776;</button>
+      <div class="profile"><strong color="#0077ff">Authentique.AI</strong></div>
+    </div>
+
+    <!-- Scanner Section -->
+    <div class="dashboard" id="scanner-section" style="display:flex;">
+      <div class="upload-form">
+        <h3>Formulaire d'authentification</h3>
+           <p>Bienvenue sur <strong color="#0077ff">Authentique.AI</strong> une solution fiable pour
+        l'authentification de vos billet de banque </p>
+        <label for="amount">Selectionnez le montant du billet :</label>
+        <select id="amount" name="amount">
+          <option value="1">1$</option>
+          <option value="5">5$</option>
+          <option value="10">10$</option>
+          <option value="20">20$</option>
+          <option value="50">50$</option>
+          <option value="100">100$</option>
+        </select>
+
+        <label for="rectoInput">Recto du billet :</label>
+        <input type="file" id="rectoInput" accept="image/*" />
+
+        <label for="versoInput">Verso du billet :</label>
+        <input type="file" id="versoInput" accept="image/*" />
+      </div>
+
+      <div class="card-mobile">
+        <h4>Recto du billet</h4>
+        <div style="position: relative;">
+          <img id="billetRecto" src="" alt="Aucun billet" />
+          <div id="scanner-bar"></div>
+        </div>
+
+        <button class="analyze-btn" id="analyze-btn">Analyser</button>
+
+        <div class="analyze-result" id="resultatAnalyse">
+           Analyse complète : le billet semble authentique.
+        </div>
+      </div>
+    </div>
+
+    <!-- Analyse Statistique Section -->
+    <div class="dashboard" id="analyse-section" style="display:none; max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 10px;">
+      <h3>Analyse Statistique des Billets Scannés</h3>
+      <canvas id="statsChart" width="600" height="300" style="max-width: 100%;"></canvas>
+      <div id="statsSummary" style="margin-top: 20px; font-weight: 600; color: #333;"></div>
+    </div>
+  </div>
+
+  <!-- === Notification en haut à droite === -->
+  <div id="notification">
+    <span id="notification-message"></span>
+    <button id="notification-ok">OK</button>
+  </div>
+
+  <audio id="scan-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3"></audio>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    const rectoInput = document.getElementById("rectoInput");
+    const versoInput = document.getElementById("versoInput");
+    const billetRecto = document.getElementById("billetRecto");
+    const scannerBar = document.getElementById("scanner-bar");
+    const analyzeBtn = document.getElementById("analyze-btn");
+    const scanSound = document.getElementById("scan-sound");
+    const resultatAnalyse = document.getElementById("resultatAnalyse");
+    const amountSelect = document.getElementById("amount");
+    const historyContainer = document.getElementById("sidebar-history");
+    const analyseSection = document.getElementById('analyse-section');
+    const scannerSection = document.getElementById('scanner-section');
+    const sidebar = document.querySelector('.sidebar');
+    const menuToggle = document.getElementById('menu-toggle');
+
+    // Notification
+    const notification = document.getElementById("notification");
+    const notificationMessage = document.getElementById("notification-message");
+    const notificationOkBtn = document.getElementById("notification-ok");
+
+    notificationOkBtn.addEventListener("click", () => {
+      notification.style.display = "none";
+    });
+
+    let rectoSrc = "";
+    let versoSrc = "";
+
+    // Onglets sidebar
+    const sidebarItems = document.querySelectorAll('.sidebar ul li');
+    sidebarItems.forEach(item => {
+      item.addEventListener('click', () => {
+        sidebarItems.forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+
+        if (item.dataset.tab === 'scanner') {
+          scannerSection.style.display = 'flex';
+          historyContainer.style.display = 'none';
+          analyseSection.style.display = 'none';
+        } else if (item.dataset.tab === 'historique') {
+          scannerSection.style.display = 'none';
+          historyContainer.style.display = 'block';
+          analyseSection.style.display = 'block';
+
+          updateStatsChart();
+        } else {
+          scannerSection.style.display = 'none';
+          historyContainer.style.display = 'none';
+          analyseSection.style.display = 'none';
+        }
+
+        // Fermer sidebar sur mobile après clic
+        if(window.innerWidth <= 768){
+          sidebar.classList.remove('active');
+        }
+      });
+    });
+
+    // Toggle sidebar sur mobile
+    menuToggle.addEventListener('click', () => {
+      sidebar.classList.toggle('active');
+    });
+
+    rectoInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        rectoSrc = URL.createObjectURL(file);
+        billetRecto.src = rectoSrc;
+        billetRecto.style.display = "block";
+        resultatAnalyse.style.display = "none";
+      }
+    });
+
+    versoInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        versoSrc = URL.createObjectURL(file);
+        // Pas d'affichage direct du verso, juste stocké
+      }
+    });
+
+    analyzeBtn.addEventListener("click", () => {
+      if (!rectoSrc) {
+        alert("Veuillez d'abord uploader une image recto.");
+        return;
+      }
+      if (!versoSrc) {
+        alert("Veuillez d'abord uploader une image verso.");
+        return;
+      }
+
+      scannerBar.style.display = "block";
+      scannerBar.style.animation = "scan-move 3s ease-in-out";
+
+      analyzeBtn.classList.add("loading");
+      resultatAnalyse.style.display = "none";
+
+      // Son bip répété
+      const interval = setInterval(() => scanSound.play(), 700);
+
+      setTimeout(() => {
+        clearInterval(interval);
+        scannerBar.style.display = "none";
+        scannerBar.style.animation = "";
+        analyzeBtn.classList.remove("loading");
+        resultatAnalyse.style.display = "block";
+
+        addToHistory();
+
+        // === Nouvelle notification ===
+        const amount = amountSelect.value;
+
+        // Extraction du dernier résultat dans l'historique pour cohérence
+        const lastEntry = historyContainer.querySelector('.history-entry');
+        const lastResultText = lastEntry?.querySelector('.result')?.textContent || "";
+        const authentique = lastResultText.toLowerCase().includes("authentique");
+
+        notificationMessage.textContent = `Votre billet de ${amount}$ est ${authentique ? "authentique ✅" : "non authentique ❌"}.`;
+        notification.classList.toggle("non-authentique", !authentique);
+        notification.style.display = "flex";
+      }, 3000);
+    });
+
+    function addToHistory() {
+      const now = new Date().toLocaleTimeString();
+      const amount = amountSelect.value;
+
+      // Simulation : 80% billets authentiques
+      const isAuthentique = Math.random() < 0.8;
+
+      const entry = document.createElement("div");
+      entry.className = "history-entry";
+
+      entry.innerHTML = `
+        <img src="${rectoSrc}" alt="Billet Recto" />
+        <div>
+          <div><strong>Montant :</strong> ${amount}$</div>
+          <div><strong>Heure :</strong> ${now}</div>
+          <div class="result"><strong>Résultat :</strong> Billet ${isAuthentique ? "authentique ✅" : "non authentique ❌"}</div>
+        </div>
+      `;
+
+      historyContainer.prepend(entry);
+    }
+
+    let chartInstance = null;
+
+    function updateStatsChart() {
+      const entries = Array.from(historyContainer.querySelectorAll('.history-entry'));
+      if (entries.length === 0) {
+        document.getElementById('statsSummary').textContent = "Aucune donnée pour afficher les statistiques.";
+        if(chartInstance) {
+          chartInstance.destroy();
+          chartInstance = null;
+        }
+        return;
+      }
+
+      const countsByAmount = { "1":0, "5":0, "10":0, "20":0, "50":0, "100":0 };
+      let authentiqueCount = 0;
+      let nonAuthentiqueCount = 0;
+
+      entries.forEach(e => {
+        const amountText = e.querySelector("div strong").nextSibling.textContent.trim();
+        const amount = amountText.replace("$", "");
+        if(countsByAmount.hasOwnProperty(amount)) countsByAmount[amount]++;
+
+        const res = e.querySelector(".result").textContent.toLowerCase();
+        if(res.includes("authentique")) authentiqueCount++;
+        else nonAuthentiqueCount++;
+      });
+
+      const ctx = document.getElementById('statsChart').getContext('2d');
+      if(chartInstance) chartInstance.destroy();
+
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(countsByAmount).map(a => a + "$"),
+          datasets: [{
+            label: 'Nombre de billets scannés par montant',
+            data: Object.values(countsByAmount),
+            backgroundColor: '#0077ff'
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+              stepSize: 1
+            }
+          }
+        }
+      });
+
+      document.getElementById('statsSummary').textContent = `Total billets : ${entries.length}, Authentiques : ${authentiqueCount}, Non authentiques : ${nonAuthentiqueCount}.`;
+    }
+  </script>
+</body>
+</html>
