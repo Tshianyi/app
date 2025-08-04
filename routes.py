@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, jsonify
 import os
 import pathlib
 from joblib import load
-from app.ETL import transform_two_images
+from ETL import transform_two_images
 
 routes = Blueprint('routes', __name__)
 
