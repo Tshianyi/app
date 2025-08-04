@@ -8,7 +8,7 @@ routes = Blueprint('routes', __name__)
 
 # Charger le modèle
 base_dir = pathlib.Path(__file__).parent.parent.resolve()
-model_path = base_dir / "modèle" / "banknoteMd.pkl"
+model_path = base_dir / "model" / "banknoteMd.pkl"
 model = load(model_path)
 
 @routes.route("/", methods=["GET", "POST"])
