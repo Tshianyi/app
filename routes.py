@@ -59,7 +59,7 @@ def api_verify():
         features = transform_two_images(str(recto_path), str(verso_path))
         prediction = model.predict(features)
 
-        is_auth = prediction[0] == 1
+        is_auth = prediction[0] == 0
         return jsonify({
             "authentique": is_auth,
             "message": "✅ VRAI BILLET" if is_auth else "❌ FAUX BILLET"
