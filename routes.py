@@ -30,7 +30,7 @@ def index():
             try:
                 features = transform_two_images(str(recto_path), str(verso_path))
                 prediction = model.predict(features)
-                resultat = "✅ VRAI BILLET" if prediction[0] == 1 else "❌ FAUX BILLET"
+                resultat = "✅ VRAI BILLET" if prediction[0] == 0 else "❌ FAUX BILLET"
             except Exception as e:
                 resultat = f"Erreur lors de l’analyse : {e}"
 
