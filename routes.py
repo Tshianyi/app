@@ -1,16 +1,13 @@
 from flask import Blueprint, render_template, request, jsonify
 import os
-from pathlib import Path
+import pathlib
 from joblib import load
 from ETL import transform_two_images
 
 routes = Blueprint('routes', __name__)
 
-# Définir le chemin du modèle
-base_dir = Path(__file__).resolve().parent.parent
-model_path = base_dir / "app" / "model" / "banknoteMd.pkl"
-
 # Charger le modèle
+model_path =  os.path.join(os.path.dirname(__file__),"model" ,"banknoteMd.pkl")
 model = load(model_path)
 
 @routes.route("/", methods=["GET", "POST"])
@@ -33,24 +30,21 @@ def index():
             try:
                 features = transform_two_images(str(recto_path), str(verso_path))
                 prediction = model.predict(features)
-                # Ici on ignore la prédiction
-                resultat = "✅ VRAI BILLET"
+                resultat = "✅ VRAI BILLET" if prediction[0] == 1 else "❌ FAUX BILLET"
             except Exception as e:
-                resultat = "✅ VRAI BILLET (erreur ignorée)"
+                resultat = f"Erreur lors de l’analyse : {e}"
 
     return render_template("index.html", result=resultat)
 
+# ✅ Nouvelle route API pour interagir avec le frontend JS
 @routes.route("/api/verify", methods=["POST"])
 def api_verify():
     recto = request.files.get("recto")
     verso = request.files.get("verso")
-    amount = request.form.get("amount")
+    amount = request.form.get("amount")  # Utilisé si tu veux enregistrer plus tard
 
     if not recto or not verso:
-        return jsonify({
-            "authentique": True,
-            "message": "VRAI BILLET (images manquantes)"
-        })
+        return jsonify({"authentique": False, "message": "Images manquantes"}), 400
 
     try:
         upload_folder = base_dir / "app" / "static" / "uploads"
@@ -64,14 +58,15 @@ def api_verify():
 
         features = transform_two_images(str(recto_path), str(verso_path))
         prediction = model.predict(features)
-        # Ici on ignore la prédiction
+
+        is_auth = prediction[0] == 1
         return jsonify({
-            "authentique": True,
-            "message": "VRAI BILLET"
+            "authentique": is_auth,
+            "message": "✅ VRAI BILLET" if is_auth else "❌ FAUX BILLET"
         })
 
     except Exception as e:
         return jsonify({
-            "authentique": True,
-            "message": "VRAI BILLET (erreur ignorée)"
-        })
+            "authentique": False,
+            "message": f"Erreur lors de l’analyse : {str(e)}"
+        }), 500
