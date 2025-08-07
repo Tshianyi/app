@@ -11,7 +11,7 @@ def extract_features_from_image(image_path):
         raise ValueError(f"Impossible de lire l'image à l’emplacement : {image_path}")
 
     # Redimensionner l’image
-    img = cv2.resize(img, (150,150))
+    img = cv2.resize(img, (100,100))
 
     # Appliquer la transformée en ondelettes (Haar)
     coeffs = pywt.wavedec2(img, 'haar', level=1)
