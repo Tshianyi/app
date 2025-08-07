@@ -4,22 +4,23 @@ import pywt
 from scipy.stats import kurtosis, skew, entropy
 
 def preprocess_image(image_path):
-    # Lire l’image en niveaux de gris
+    # Charger l'image en niveaux de gris
     img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     if img is None:
         raise ValueError(f"Image introuvable : {image_path}")
 
-    # Redimensionner uniformément
+    # Étape 1 : Denoising + Redimensionnement
+    img = cv2.GaussianBlur(img, (5, 5), 0)
     img = cv2.resize(img, (256, 256))
 
-    # Appliquer un flou gaussien pour réduire le bruit
-    img = cv2.GaussianBlur(img, (5, 5), 0)
+    # Étape 2 : Seuil adaptatif pour simuler un scan (binarisation nette)
+    img = cv2.adaptiveThreshold(
+        img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY, 11, 2
+    )
 
-    # Normalisation des pixels (0–1)
-    img = img / 255.0
-
-    # Améliorer le contraste (histogramme equalization)
-    img = cv2.equalizeHist((img * 255).astype(np.uint8))
+    # Étape 3 : Amélioration du contraste (Histogramme equalization)
+    img = cv2.equalizeHist(img)
 
     return img
 
