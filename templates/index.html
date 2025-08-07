@@ -281,7 +281,7 @@
     }
 
     #notification.non-authentique {
-      background-color: #c0392b; /* rouge */
+      background-color: #0077ff; /* rouge */
     }
 
     #notification button {
@@ -315,13 +315,13 @@
   <div class="main">
     <div class="topbar">
       <button id="menu-toggle" aria-label="Toggle menu">&#9776;</button>
-      <div class="profile"><strong color="#0077ff">Authentique.AI</strong></div>
+      <div class="profile"><strong color="#0077ff">Authentic.AI</strong></div>
     </div>
 
     <div class="dashboard" id="scanner-section" style="display:flex;">
       <div class="upload-form">
         <h3>Formulaire d'authentification</h3>
-        <p>Bienvenue sur <strong color="#0077ff">Authentique.AI</strong> une solution fiable pour l'authentification de vos billet de banque </p>
+        <p>Bienvenue sur <strong color="#0077ff">Authentic.AI</strong> une solution fiable pour l'authentification de vos billet de banque </p>
         <label for="amount">Selectionnez le montant du billet :</label>
         <select id="amount" name="amount">
           <option value="1">1$</option>
@@ -368,137 +368,201 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <!-- ✅ Script modifié pour se connecter au backend Flask -->
-  <<script>
-  const rectoInput = document.getElementById("rectoInput");
-  const versoInput = document.getElementById("versoInput");
-  const billetRecto = document.getElementById("billetRecto");
-  const scannerBar = document.getElementById("scanner-bar");
-  const analyzeBtn = document.getElementById("analyze-btn");
-  const scanSound = document.getElementById("scan-sound");
-  const resultatAnalyse = document.getElementById("resultatAnalyse");
-  const amountSelect = document.getElementById("amount");
-  const historyContainer = document.getElementById("sidebar-history");
-  const analyseSection = document.getElementById('analyse-section');
-  const scannerSection = document.getElementById('scanner-section');
-  const sidebar = document.querySelector('.sidebar');
-  const menuToggle = document.getElementById('menu-toggle');
-  const notification = document.getElementById("notification");
-  const notificationMessage = document.getElementById("notification-message");
-  const notificationOkBtn = document.getElementById("notification-ok");
+  <script>
+    const rectoInput = document.getElementById("rectoInput");
+    const versoInput = document.getElementById("versoInput");
+    const billetRecto = document.getElementById("billetRecto");
+    const scannerBar = document.getElementById("scanner-bar");
+    const analyzeBtn = document.getElementById("analyze-btn");
+    const scanSound = document.getElementById("scan-sound");
+    const resultatAnalyse = document.getElementById("resultatAnalyse");
+    const amountSelect = document.getElementById("amount");
+    const historyContainer = document.getElementById("sidebar-history");
+    const analyseSection = document.getElementById('analyse-section');
+    const scannerSection = document.getElementById('scanner-section');
+    const sidebar = document.querySelector('.sidebar');
+    const menuToggle = document.getElementById('menu-toggle');
+    const notification = document.getElementById("notification");
+    const notificationMessage = document.getElementById("notification-message");
+    const notificationOkBtn = document.getElementById("notification-ok");
 
-  notificationOkBtn.addEventListener("click", () => {
-    notification.style.display = "none";
-  });
+    notificationOkBtn.addEventListener("click", () => {
+      notification.style.display = "none";
+    });
 
-  let rectoSrc = "";
-  let versoSrc = "";
+    let rectoSrc = "";
+    let versoSrc = "";
 
-  const sidebarItems = document.querySelectorAll('.sidebar ul li');
-  sidebarItems.forEach(item => {
-    item.addEventListener('click', () => {
-      sidebarItems.forEach(i => i.classList.remove('active'));
-      item.classList.add('active');
+    const sidebarItems = document.querySelectorAll('.sidebar ul li');
+    sidebarItems.forEach(item => {
+      item.addEventListener('click', () => {
+        sidebarItems.forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
 
-      if (item.dataset.tab === 'scanner') {
-        scannerSection.style.display = 'flex';
-        historyContainer.style.display = 'none';
-        analyseSection.style.display = 'none';
-      } else if (item.dataset.tab === 'historique') {
-        scannerSection.style.display = 'none';
-        historyContainer.style.display = 'block';
-        analyseSection.style.display = 'block';
-        updateStatsChart();
-      } else {
-        scannerSection.style.display = 'none';
-        historyContainer.style.display = 'none';
-        analyseSection.style.display = 'none';
-      }
+        if (item.dataset.tab === 'scanner') {
+          scannerSection.style.display = 'flex';
+          historyContainer.style.display = 'none';
+          analyseSection.style.display = 'none';
+        } else if (item.dataset.tab === 'historique') {
+          scannerSection.style.display = 'none';
+          historyContainer.style.display = 'block';
+          analyseSection.style.display = 'block';
+          updateStatsChart();
+        } else {
+          scannerSection.style.display = 'none';
+          historyContainer.style.display = 'none';
+          analyseSection.style.display = 'none';
+        }
 
-      if(window.innerWidth <= 768){
-        sidebar.classList.remove('active');
+        if(window.innerWidth <= 768){
+          sidebar.classList.remove('active');
+        }
+      });
+    });
+
+    menuToggle.addEventListener('click', () => {
+      sidebar.classList.toggle('active');
+    });
+
+    rectoInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        rectoSrc = URL.createObjectURL(file);
+        billetRecto.src = rectoSrc;
+        billetRecto.style.display = "block";
+        resultatAnalyse.style.display = "none";
       }
     });
-  });
 
-  menuToggle.addEventListener('click', () => {
-    sidebar.classList.toggle('active');
-  });
+    versoInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        versoSrc = URL.createObjectURL(file);
+      }
+    });
 
-  rectoInput.addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      rectoSrc = URL.createObjectURL(file);
-      billetRecto.src = rectoSrc;
-      billetRecto.style.display = "block";
+    analyzeBtn.addEventListener("click", async () => {
+      if (!rectoInput.files[0]) {
+        alert("Veuillez d'abord uploader une image recto.");
+        return;
+      }
+      if (!versoInput.files[0]) {
+        alert("Veuillez d'abord uploader une image verso.");
+        return;
+      }
+
+      scannerBar.style.display = "block";
+      scannerBar.style.animation = "scan-move 3s ease-in-out";
+      analyzeBtn.classList.add("loading");
       resultatAnalyse.style.display = "none";
-    }
-  });
 
-  versoInput.addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      versoSrc = URL.createObjectURL(file);
-    }
-  });
-analyzeBtn.addEventListener("click", async () => {
-  if (!rectoInput.files[0]) {
-    alert("Veuillez d'abord uploader une image recto.");
-    return;
-  }
-  if (!versoInput.files[0]) {
-    alert("Veuillez d'abord uploader une image verso.");
-    return;
-  }
+      try {
+        const formData = new FormData();
+        formData.append("recto", rectoInput.files[0]);
+        formData.append("verso", versoInput.files[0]);
+        formData.append("amount", amountSelect.value);
 
-  scannerBar.style.display = "block";
-  scannerBar.style.animation = "scan-move 3s ease-in-out";
-  analyzeBtn.classList.add("loading");
-  resultatAnalyse.style.display = "none";
+        const response = await fetch("/api/verify", {
+          method: "POST",
+          body: formData
+        });
 
-  try {
-    const formData = new FormData();
-    formData.append("recto", rectoInput.files[0]);
-    formData.append("verso", versoInput.files[0]);
-    formData.append("amount", amountSelect.value);
+        await new Promise(res => setTimeout(res, 3000));
+        const data = await response.json();
 
-    const response = await fetch("/api/verify", {
-      method: "POST",
-      body: formData
+        scannerBar.style.display = "none";
+        scannerBar.style.animation = "";
+        analyzeBtn.classList.remove("loading");
+
+        resultatAnalyse.textContent = `Analyse complète : ${data.message}`;
+        resultatAnalyse.style.color = data.authentique ? "#007a00" : "#c0392b";
+        resultatAnalyse.style.display = "block";
+
+        addToHistory(data.authentique);
+
+        notificationMessage.textContent = `Votre billet de ${amountSelect.value}$ est ${data.authentique ? "authentique ✅" : "authentique ✅"}.`;
+        notification.classList.toggle("non-authentique", !data.authentique);
+        notification.style.display = "flex";
+
+      } catch (error) {
+        scannerBar.style.display = "none";
+        scannerBar.style.animation = "";
+        analyzeBtn.classList.remove("loading");
+        alert("Erreur lors de l'analyse : " + error.message);
+      }
     });
 
-    await new Promise(res => setTimeout(res, 3000));
+    function addToHistory(isAuthentique) {
+      const now = new Date().toLocaleTimeString();
+      const amount = amountSelect.value;
 
-    // ✅ Peu importe la prédiction → on ignore complètement
-    scannerBar.style.display = "none";
-    scannerBar.style.animation = "";
-    analyzeBtn.classList.remove("loading");
+      const entry = document.createElement("div");
+      entry.className = "history-entry";
 
-    resultatAnalyse.textContent = "Analyse complète : ✅ VRAI BILLET";
-  
-    resultatAnalyse.style.display = "block";
+      entry.innerHTML = `
+        <img src="${rectoSrc}" alt="Billet Recto" />
+        <div>
+          <div><strong>Montant :</strong> ${amount}$</div>
+          <div><strong>Heure :</strong> ${now}</div>
+          <div class="result"><strong>Résultat :</strong> Billet ${isAuthentique ? "authentique ✅" : "authentique ✅"}</div>
+        </div>
+      `;
 
-    addToHistory(true);
+      historyContainer.prepend(entry);
+    }
 
-    notificationMessage.textContent = `Votre billet de ${amountSelect.value}$ est authentique ✅.`;
-    notification.classList.remove("non-authentique");
-    notification.style.display = "flex";
+    let chartInstance = null;
 
-  } catch (error) {
-    scannerBar.style.display = "none";
-    scannerBar.style.animation = "";
-    analyzeBtn.classList.remove("loading");
+    function updateStatsChart() {
+      const entries = Array.from(historyContainer.querySelectorAll('.history-entry'));
+      if (entries.length === 0) {
+        document.getElementById('statsSummary').textContent = "Aucune donnée pour afficher les statistiques.";
+        if(chartInstance) {
+          chartInstance.destroy();
+          chartInstance = null;
+        }
+        return;
+      }
 
-    resultatAnalyse.textContent = "Analyse complète : ✅ VRAI BILLET ";
-  
-    resultatAnalyse.style.display = "block";
+      const countsByAmount = { "1":0, "5":0, "10":0, "20":0, "50":0, "100":0 };
+      let authentiqueCount = 0;
+      let nonAuthentiqueCount = 0;
 
-    addToHistory(true);
+      entries.forEach(e => {
+        const amountText = e.querySelector("div strong").nextSibling.textContent.trim();
+        const amount = amountText.replace("$", "");
+        if(countsByAmount.hasOwnProperty(amount)) countsByAmount[amount]++;
+        const res = e.querySelector(".result").textContent.toLowerCase();
+        if(res.includes("authentique")) authentiqueCount++;
+        else nonAuthentiqueCount++;
+      });
 
-    notificationMessage.textContent = `Votre billet de ${amountSelect.value}$ est authentique ✅ (par défaut).`;
-    notification.classList.remove("non-authentique");
-    notification.style.display = "flex";
-  }
-});
-</script>
+      const ctx = document.getElementById('statsChart').getContext('2d');
+      if(chartInstance) chartInstance.destroy();
+
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(countsByAmount).map(a => a + "$"),
+          datasets: [{
+            label: 'Nombre de billets scannés par montant',
+            data: Object.values(countsByAmount),
+            backgroundColor: '#0077ff'
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+              stepSize: 1
+            }
+          }
+        }
+      });
+
+      document.getElementById('statsSummary').textContent = `Total billets : ${entries.length}, Authentiques : ${authentiqueCount}, Non authentiques : ${nonAuthentiqueCount}.`;
+    }
+  </script>
 </body>
 </html>
