@@ -62,7 +62,7 @@ def api_verify():
         is_auth = prediction[0] == 0
         return jsonify({
             "authentique": is_auth,
-            "message": "✅ VRAI BILLET" if is_auth else "❌ FAUX BILLET"
+            "message": " FAUX BILLET" if is_auth else "VRAI BILLET"
         })
 
     except Exception as e:
